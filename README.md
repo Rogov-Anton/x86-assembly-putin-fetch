@@ -1,10 +1,10 @@
 # x86-assembly-putin-fetch
 
-Program for displaying system information for x86 architecture (can also be run for x86-64)
+Fast and powerful program for displaying system information for x86 architecture (can also be run for x86-64)
 
 To compile this program, you need to install the NASM assembler.
 
-### Build:
+## Build:
   ```
   make
   ```
@@ -14,7 +14,12 @@ or
   ld -m elf_i386 putin.o -o putin
   ```
 
-### Run:
+## Run:
   ```
   ./putin
   ```
+
+## Comparison of speeds of other similar programs:
+  - neofetch: ~0.688s
+  - fastfetch: ~0.093s
+  - putin-fetch: ~0.002s
