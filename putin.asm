@@ -26,38 +26,45 @@ meminfo_buffer	resb 64
 meminfo		resb 64
 
 arch_buffer	resb 16
-; statfs_buffer	resb 64
+statfs_buffer	resb 64
 
-; number_buffer	resb 20				; max number is 2^64 = 
+total_buffer	resb 20				; max number is 2^64 = 
 						; 18446744073709551616
 						;         length is 20
+free_buffer	resb 20
+diskinfo_buffer resb 40
+
 
 buffer		resb 2048
 
 section .text
 
 ; white color
-first_line	db 10,     " ⣿⣿⣿⣿⣻⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿  PUTIN",             10
-		db         " ⣿⣿⣿⣿⣻⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿  -----",             10, 0
-username_line	db         " ⣿⣿⣿⣵⣿⣿⣿⠿⡟⣛⣧⣿⣯⣿⣝⡻⢿⣿⣿⣿⣿⣿⣿⣿  Username: soon...", 10, 0
-hostname_line	db         " ⣿⣿⣿⣿⣿⠋⠁⣴⣶⣿⣿⣿⣿⣿⣿⣿⣦⣍⢿⣿⣿⣿⣿⣿  Hostname: ",            0
-os_line		db         " ⣿⣿⣿⣿⢷⠄⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣏⢼⣿⣿⣿⣿  OS: ",                  0
-kernel_line	db         " ⢹⣿⣿⢻⠎⠔⣛⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡏⣿⣿⣿⣿  Kernel: ",              0
-; blue color
-first_b_line	db 27, "[34m ⠐⣿⣿⠇⡶⠄⣿⣿⠿⠟⡛⠛⠻⣿⡿⠿⠿⣿⣗⢣⣿⣿⣿⣿",           27, "[00m",  10, 0
-uptime_line	db 27, "[34m ⠐⣿⣿⡿⣷⣾⣿⣿⣿⣾⣶⣶⣶⣿⣁⣔⣤⣀⣼⢲⣿⣿⣿⣿  Uptime: ", 27, "[00m",  0
-cpu_line	db 27, "[34m ⠄⣿⣿⣿⣿⣾⣟⣿⣿⣿⣿⣿⣿⣿⡿⣿⣿⣿⢟⣾⣿⣿⣿⣿  CPU: ",    27, "[00m",  0
-memory_line	db 27, "[34m ⠄⣟⣿⣿⣿⡷⣿⣿⣿⣿⣿⣮⣽⠛⢻⣽⣿⡇⣾⣿⣿⣿⣿⣿  Memory: ", 27, "[00m",  0
-disk_line	db 27, "[34m ⠄⢻⣿⣿⣿⡷⠻⢻⡻⣯⣝⢿⣟⣛⣛⣛⠝⢻⣿⣿⣿⣿⣿⣿  Disk: ",   27, "[00m", "soon...", 10, 0
-
-last_b_line	db 27, "[34m ⠄⠸⣿⣿⡟⣹⣦⠄⠋⠻⢿⣶⣶⣶⡾⠃⡂⢾⣿⣿⣿⣿⣿⣿",           27, "[00m",  10, 0
-; red color
-first_r_line	db 27, "[31m ⠄⠄⠟⠋⠄⢻⣿⣧⣲⡀⡀⠄⠉⠱⣠⣾⡇⠄⠉⠛⢿⣿⣿⣿",                 27, "[00m",         10, 0
-arch_line	db 27, "[31m ⠄⠄⠄⠄⠄⠈⣿⣿⣿⣷⣿⣿⢾⣾⣿⣿⣇⠄⠄⠄⠄⠄⠉⠉  Architecture: ", 27, "[00m",         0
-							; а зачем проверять, путин форевeр
-last_line	db 27, "[31m ⠄⠄⠄⠄⠄⠄⠸⣿⣿⠟⠃⠄⠄⢈⣻⣿⣿⠄⠄⠄⠄⠄⠄⠄  President: ",    27, "[00mPutin",    10
-		db 27, "[31m ⠄⠄⠄⠄⠄⠄⠄⢿⣿⣾⣷⡄⠄⢾⣿⣿⣿⡄⠄⠄⠄⠄⠄⠄  Договорнячок: ", 27, "[00mподписан", 10
-		db 27, "[31m ⠄⠄⠄⠄⠄⠄⠄⠸⣿⣿⣿⠃⠄⠈⢿⣿⣿⠄⠄⠄⠄⠄⠄⠄  Гойда: ",        27, "[00mесть",     10, 10,  0
+first_line	db 10,     " ⣿⣿⣿⣿⣻⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿  PUTIN", 10
+		db         " ⣿⣿⣿⣿⣻⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿  -----", 10, 0
+username_line	db         " ⣿⣿:⣵⣿⣿⣿⠿⡟⣛⣧⣿⣯⣿⣝⡻⢿⣿⣿⣿⣿⣿⣿⣿  Username: "
+		db "not working yet", 10, 0
+hostname_line	db         " ⣿⣿⣿⣿⣿⠋⠁⣴⣶⣿⣿⣿⣿⣿⣿⣿⣦⣍⢿⣿⣿⣿⣿⣿  Hostname: ", 0
+os_line		db         " ⣿⣿⣿⣿⢷⠄⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣏⢼⣿⣿⣿⣿  OS: ", 0
+kernel_line	db         " ⢹⣿⣿⢻⠎⠔⣛⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡏⣿⣿⣿⣿  Kernel: ", 0
+first_b_line	db 27, "[34m ⠐⣿⣿⠇⡶⠄⣿⣿⠿⠟⡛⠛⠻⣿⡿⠿⠿⣿⣗⢣⣿⣿⣿⣿", 27, "[00m", 10, 0
+uptime_line	db 27, "[34m ⠐⣿⣿⡿⣷⣾⣿⣿⣿⣾⣶⣶⣶⣿⣁⣔⣤⣀⣼⢲⣿⣿⣿⣿  Uptime: "
+		db 27, "[00m",  0
+cpu_line	db 27, "[34m ⠄⣿⣿⣿⣿⣾⣟⣿⣿⣿⣿⣿⣿⣿⡿⣿⣿⣿⢟⣾⣿⣿⣿⣿  CPU: "
+		db 27, "[00m",  0
+memory_line	db 27, "[34m ⠄⣟⣿⣿⣿⡷⣿⣿⣿⣿⣿⣮⣽⠛⢻⣽⣿⡇⣾⣿⣿⣿⣿⣿  Memory: "
+		db 27, "[00m",  0
+disk_line	db 27, "[34m ⠄⢻⣿⣿⣿⡷⠻⢻⡻⣯⣝⢿⣟⣛⣛⣛⠝⢻⣿⣿⣿⣿⣿⣿  Disk: ", 27, "[00m", 0
+last_b_line	db 27, "[34m ⠄⠸⣿⣿⡟⣹⣦⠄⠋⠻⢿⣶⣶⣶⡾⠃⡂⢾⣿⣿⣿⣿⣿⣿", 27, "[00m", 10, 0
+first_r_line	db 27, "[31m ⠄⠄⠟⠋⠄⢻⣿⣧⣲⡀⡀⠄⠉⠱⣠⣾⡇⠄⠉⠛⢿⣿⣿⣿", 27, "[00m", 10, 0
+arch_line	db 27, "[31m ⠄⠄⠄⠄⠄⠈⣿⣿⣿⣷⣿⣿⢾⣾⣿⣿⣇⠄⠄⠄⠄⠄⠉⠉  Architecture: "
+		db 27, "[00m", 0
+last_line	db 27, "[31m ⠄⠄⠄⠄⠄⠄⠸⣿⣿⠟⠃⠄⠄⢈⣻⣿⣿⠄⠄⠄⠄⠄⠄⠄  President: "
+		db 27, "[00mPutin", 10 ; а зачем проверять, путин форевeр
+		db 27, "[31m ⠄⠄⠄⠄⠄⠄⠄⢿⣿⣾⣷⡄⠄⢾⣿⣿⣿⡄⠄⠄⠄⠄⠄⠄  Договорнячок: "
+		db 27, "[00mподписан", 10
+		db 27, "[31m ⠄⠄⠄⠄⠄⠄⠄⠸⣿⣿⣿⠃⠄⠈⢿⣿⣿⠄⠄⠄⠄⠄⠄⠄  Гойда: "
+		db 27, "[00mесть", 10, 10, 0
 
 m_seconds	db " secs", 10, 0
 
@@ -72,13 +79,11 @@ newline		db 10
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; MOVE PARTS ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;
 ; Places a given part of one buffer into another buffer,
 ; and writes a new line (char with code 10) to the end of the data
 ; Parameters:
 ;   * [ebp+8] - source buffer
 ;   * [ebp+12] - another buffer
-;
 
 move_parts:	push	ebp
 		mov	ebp, esp
@@ -105,13 +110,11 @@ move_parts:	push	ebp
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; READ FILE ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;
 ; Reads the file and writes it to the buffer
 ; Parameters:
 ;   * [ebp+8] - file name
 ;   * [ebp+12] - buffer address
 ;   * [ebp+16] - buffer size
-;
 
 read_file:	push	ebp
 		mov	ebp, esp
@@ -174,7 +177,7 @@ get_cpuinfo:	push	ebp
 		PCALL	read_file, cpuinfo_file, cpuinfo_buffer, 256
 
 		mov	esi, cpuinfo_buffer
-		mov	byte [ebp-4], 5		;    we need to read 5 lines,
+		mov	byte [ebp-4], 5		;     we need to read 5 lines,
 						;     because the information 
 						; we need about the processor
 						;          is in the 5th line
@@ -246,9 +249,133 @@ get_meminfo:	push	ebp
 		ret
 
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;; CONVERT NUMBER ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; Converts a number to a string
+; Parameters:
+;   * [ebp+8] - number
+;   * [ebp+12] - buffer for result
+
+convert_number:	push	ebp			;       buffer structure: 
+						; [0, 0, ... 0, <number>]
+		mov	ebp, esp
+		sub	esp, 4
+		push	esi
+		push	edi
+
+		mov	dword [ebp-4], 10	; 32-bit divisor
+		mov	edi, [ebp+12]
+		add	edi, 19			; 20(buffer_size) - 1
+		std
+		mov	eax, [ebp+8]
+		xor	ecx, ecx		; ECX = 0; nubmer length
+
+.add_digit:	test	eax, eax
+		jz	.shift_left
+		xor	edx, edx		; EDX = 0
+		div	dword [ebp-4]		; EAX / 10 -> EAX:EDX
+		
+		add	edx, "0"		; to get char code
+		
+		mov	[edi], dl
+		dec	edi
+		inc	ecx
+
+		jmp short .add_digit
+
+		; moves non-zero characters to the beginning of the buffer
+.shift_left:	cld
+		mov	esi, [ebp+12]
+		xchg	esi, edi
+		inc	esi
+.shift_digit:	movsb				; [ESI] -> [EDI]
+		test	ecx, ecx
+		jz	.end
+		dec	ecx
+		jmp short .shift_digit
+
+.end:		mov	byte [edi], 0
+		pop	edi
+		pop	esi
+		mov	esp, ebp
+		pop	ebp
+		ret
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; DISK INFO ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+get_disk_info:	push	ebp
+		mov	ebp, esp
+		sub	esp, 8
+		push	esi
+
+		KERNEL	99, root, statfs_buffer
+
+		; extract data from the buffer:
+		; offset 4:  size of one block in bytes
+		; offset 8:  total number of blocks
+		; offset 12: free blocks
+		mov	eax, [statfs_buffer + 4]
+		mov	ebx, [statfs_buffer + 8]
+		mov	ecx, [statfs_buffer + 12]
+
+		mov	dword [ebp-8],  1024	; kB = 1024 B (32-bit divisor)
+		mov	dword [ebp-12], 1024 * 1024 ; MB
+
+		xor	edx, edx
+		div	dword [ebp-8]		; EAX / 1024
+		mov	[ebp-4], eax		; [EBP-4] = how many kB in 
+						;                    block
+		
+		; calculate total GB
+		push	eax
+		push	ecx
+		xor	edx, edx
+		mov	eax, ebx
+		mul	dword [ebp-4]
+		div	dword [ebp-12]
+		PCALL	convert_number, eax, total_buffer
+		pop	ecx
+		pop	eax
+
+		; calculate how many GB are free
+		sub	ebx, ecx
+		mov	eax, ebx
+		mul	dword [ebp-4]
+		div	dword [ebp-12]
+		PCALL	convert_number, eax, free_buffer
+
+.union_buffers:	mov	edi, diskinfo_buffer
+.write_free:	mov	esi, free_buffer
+.lp1:		lodsb				; AL <- free_buffer[ESI]
+		test	al, al
+		jz	.write_total
+		stosb				; AL -> diskinfo_buffer[EDI]
+		jmp short .lp1
+
+.write_total:	mov	[edi], byte "/"
+		inc	edi
+		mov	esi, total_buffer
+.lp2:		lodsb
+		test	al, al
+		jz	.end
+		stosb
+		jmp short .lp2
+
+.end:		mov	[edi], byte "G"
+		inc	edi
+		mov	[edi], byte "B"
+		inc	edi
+		mov	[edi], byte 10
+		inc	edi
+		pop	ebx
+		mov	esp, ebp
+		pop	ebp
+		ret
+
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;; WRITE BUFFER ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;
 ; Writes the contents of one buffer to another
 ; Parameters:
 ;   * [ebp+8] - source buffer
@@ -272,13 +399,14 @@ write_buffer:	push	ebp
 		ret
 
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; BUFFER UNION ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; BUFFER UNION ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; Combines all data into a single whole
 
 buffers_union:	push	ebp
 		mov	ebp, esp
 
 		mov	edi, buffer
-
 		; white
 		PCALL	write_buffer, first_line
 		PCALL	write_buffer, username_line
@@ -298,8 +426,9 @@ buffers_union:	push	ebp
 		PCALL	write_buffer, memory_line
 		PCALL	write_buffer, meminfo
 		PCALL	write_buffer, disk_line
+		PCALL	write_buffer, diskinfo_buffer
 		PCALL	write_buffer, last_b_line
-
+		; red
 		PCALL	write_buffer, first_r_line
 		PCALL	write_buffer, arch_line
 		PCALL	write_buffer, arch_buffer
@@ -324,7 +453,7 @@ _start:		KERNEL	122, uname_buffer, 390
 		call	get_meminfo
 		PCALL	read_file, arch_file, arch_buffer, 16
 
-		mov	esi, arch_buffer	; write 10 (new line) to end
+		mov	esi, arch_buffer	; write 10 (new line) to end;
 						; data in arch_buffer
 arch_loop:	lodsb
 		cmp	al, 0
@@ -332,118 +461,10 @@ arch_loop:	lodsb
 		jmp short arch_loop
 end:		mov	byte [esi], 10
 
-		call	buffers_union
+		call	get_disk_info		; disk info
+
+	       	call	buffers_union
 		KERNEL	4, 1, buffer, 2048
 
 		KERNEL	1, 0
 
-;;;;;;;;;;;;;;;;;;;
-;;not working yet;;
-;;;;;;;;;;;;;;;;;;;
-
-; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; DISK INFO ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; 
-; get_disk_info:	push	ebp
-; 		mov	ebp, esp
-; 		push	ebx
-; 		push	esi
-; 
-; 		KERNEL	99, root, statfs_buffer
-; 
-; 		; extract data from the buffer:
-; 		; offset 4:  size of one block in bytes
-; 		; offset 8:  total number of blocks
-; 		; offset 12: free blocks
-; 		mov	eax, [statfs_buffer + 4]
-; 		mov	ebx, [statfs_buffer + 8]
-; 		mov	ecx, [statfs_buffer + 12]
-; 
-; 		sub	ebx, ecx		; how many blocks are in use
-; 		mul	ebx			; EAX * EBX = EDX:EAX
-; 
-; 		PCALL	convert_number, ebx, number_buffer
-; 
-; 		mov	esi, number_buffer
-; 		mov	ecx, 20
-; 
-; .add_digit:	cmp	ecx, 20
-; 		jz	.end
-; 		lodsb				; AL <- [ESI]
-; 		mov	byte [number_buffer + ecx], al
-; 		jmp short .add_digit
-; 
-; 		;; PCALL print_number, number_buffer
-; 		
-; .end:		mov	byte [number_buffer + ecx], 0
-; 		pop	esi
-; 		pop	ebx
-; 		mov	esp, ebp
-; 		pop	ebp
-; 		ret
-
-; ;;;;;;;;;;;;;;;;;;;;;;;;;;;; CONVERT NUMBER ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; 
-; ;
-; ; Converts a number to a string
-; ; Parameters:
-; ;   * [ebp+8] - number
-; ;   * [ebp+12] - buffer for result
-; ;
-; 
-; convert_number:	push	ebp			; buffer structure: 
-; 						; [0, 0, ... 0, <number>]
-; 		mov	ebp, esp
-; 		sub	esp, 4
-; 		push	edi
-; 
-; 		mov	dword [ebp-4], 10	; 32-bit divisor
-; 		mov	edi, [ebp+12]
-; 		add	edi, 19			; 20(buffer_size) - 1
-; 		std
-; 		mov	eax, [ebp+8]
-; 
-; .add_digit:	test	eax, eax
-; 		jz	.end
-; 		xor	edx, edx		; EDX = 0
-; 		div	dword [ebp-4]		; EAX / 10 -> EAX:EDX
-; 		
-; 		add	edx, "0"
-; 		
-; 		mov	[edi], dl
-; 		dec	edi
-; 
-; 		jmp short .add_digit
-; 
-; .end:		pop	edi
-; 		mov	esp, ebp
-; 		pop	ebp
-; 		ret
-
-
-; ; procedure to print number, that `convert_number` write to buffer
-; print_number:	push	ebp
-; 		mov	ebp, esp
-; 		push	esi
-; 		
-; 		mov	cl, 0			; number length
-; 		mov	esi, [ebp+8]		; [ebp+8] - number buffer
-; 		cld
-; .loop:		lodsb
-; 		test	al, al
-; 		jnz	.dec_esi
-; 		inc	cl
-; 		jmp short .loop
-; 
-; .dec_esi:	dec	esi
-; .print_digit:	KERNEL	4, 1, esi, 1
-; 		inc	cl
-; 		cmp	cl, 20
-; 		jz	.end
-; 		lodsb
-; 		jmp short .print_digit
-; 
-; .end:		; KERNEL	4, 1, newline, 1
-; 		pop	esi
-; 		mov	esp, ebp
-; 		pop	ebp
-; 		ret
